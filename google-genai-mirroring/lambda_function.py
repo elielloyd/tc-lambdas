@@ -32,7 +32,7 @@ def load_pdf_from_url(url):
     r.raise_for_status()
     return r.content
 
-response_schema = {
+default_response_schema = {
   "type": "object",
   "properties": {
     "name": {
@@ -134,6 +134,9 @@ def lambda_handler(event, context):
         if not system_prompt:
             raise Exception("required_field is missing")
 
+        # Use Response Schema from payload if available
+        active_schema = event.get("response_schema", default_response_schema)
+
         # Load PDF bytes
         if "pdf_base64" in event:
             pdf_bytes = base64.b64decode(event["pdf_base64"])
@@ -149,7 +152,7 @@ def lambda_handler(event, context):
             config=GenerateContentConfig(
                 system_instruction=system_prompt,
                 response_mime_type="application/json",
-                response_schema=response_schema,
+                response_schema=active_schema,
                 # thinking_config=thinking_config,
                 temperature=0.01,
             ),
@@ -159,3 +162,4 @@ def lambda_handler(event, context):
     except Exception as e:
         raise Exception(str(e))
     
+
